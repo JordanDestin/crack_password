@@ -4,7 +4,10 @@ import hashlib
 import string
 import sys
 import time
-import  atexit
+import atexit
+import urllib.request
+import urllib.response
+import urllib.error
 
 
 def crack_dict(md5, file):
@@ -46,8 +49,25 @@ def crack_inc(md5, length, currpass=[]):
                 else:
                     crack_inc(md5, length -1, currpass)
 
+def crack_online(md5):
+    try:
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0"
+        headers = {"User-Agent": user_agent}
+        url = "https://www.googlr.fr/search?hl=fr&q=" + md5
+        request = urllib.request.Request(url, None, headers)
+        response = urllib.request.urlopen(request)
+    except urllib.error.HTTPError as e:
+        print("Http error: " + e.code)
+    except urllib.error.URLError as e:
+        print("Error Url: " + e.reason)
 
-def display_time():
+    if "No result" in str(response.read()):
+        print("no find hash")
+    else:
+        print("Hash find: " + url)
+
+
+def show_time():
     print("Durée : " + str(time.time() - start) + " secondes")
 
 
@@ -56,11 +76,12 @@ parser.add_argument("-f", "--file", dest="file", help="Path of the dictionary", 
 parser.add_argument("-g", "--gen", dest="gen", help="Generate Md5 has of password", required=False)
 parser.add_argument("-md5", dest="md5", help="Hashed password (MD5)", required=False)
 parser.add_argument("-l", dest="plength", help="Password length", required=False, type=int)
+parser.add_argument("-ol", dest="online", help="search hash online", required=False, action="store_true")
 
 args = parser.parse_args()
 
 start = time.time()
-atexit.register(display_time)
+atexit.register(show_time)
 
 if args.md5:
     print("cracking hash" + args.md5)
@@ -70,6 +91,9 @@ if args.md5:
     elif args.plength and not args.file:
         print("using incremental  mode for" + str(args.plength))
         crack_inc(args.md5, args.plength)
+    elif args.online:
+        print("using online mode")
+        crack_online(args.md5)
     else:
         print("please choose either -f or -l argument")
 else:
